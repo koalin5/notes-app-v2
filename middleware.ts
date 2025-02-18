@@ -1,23 +1,37 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isProtectedRoute = createRouteMatcher([""]);
+// Define protected routes - all routes except public ones
+const isProtectedRoute = createRouteMatcher([
+  "/notes",          // Protect the main notes page
+  "/notes/new",      // Protect note creation
+  "/api/*",         // Protect API routes
+]);
+
+// Define public routes that should be accessible without auth
+const isPublicRoute = createRouteMatcher([
+  "/",               // Landing page
+  "/notes/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",  // Shared note pages (UUID pattern)
+]);
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId, redirectToSignIn } = auth();
+  const path = req.nextUrl.pathname;
 
-  // If the user isn't signed in and the route is private, redirect to sign-in
-  if (!userId && isProtectedRoute(req)) {
-    return redirectToSignIn({ returnBackUrl: "/login" });
-  }
-
-  // If the user is logged in and the route is protected, let them view.
-  if (userId && isProtectedRoute(req)) {
+  // Allow access to public routes
+  if (isPublicRoute(req)) {
     return NextResponse.next();
   }
+
+  // If the user isn't signed in and the route is protected, redirect to sign-in
+  if (!userId && isProtectedRoute(req)) {
+    return redirectToSignIn({ returnBackUrl: req.url });
+  }
+
+  // Allow access for authenticated users
+  return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"]
+  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
 };
-``

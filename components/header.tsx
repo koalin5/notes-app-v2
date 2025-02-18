@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { CheckSquare, Menu, X } from "lucide-react";
 import Link from "next/link";
@@ -14,34 +15,35 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-primary text-primary-foreground shadow-md">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <CheckSquare className="h-6 w-6" />
           <h1 className="text-xl font-bold">AI Notes App</h1>
         </div>
-        <nav className="hidden md:flex space-x-4">
+        <nav className="hidden md:flex items-center space-x-6">
           <Link
             href="/"
-            className="hover:underline"
+            className="text-sm font-medium transition-colors hover:text-primary"
           >
             Home
           </Link>
           <SignedIn>
             <Link
               href="/notes"
-              className="hover:underline"
+              className="text-sm font-medium transition-colors hover:text-primary"
             >
               Notes
             </Link>
           </SignedIn>
         </nav>
         <div className="flex items-center space-x-4">
+          <ThemeToggle />
           <SignedOut>
             <SignInButton />
           </SignedOut>
           <SignedIn>
-            <UserButton />
+            <UserButton afterSignOutUrl="/" />
           </SignedIn>
           <div className="md:hidden">
             <Button
@@ -56,29 +58,31 @@ export default function Header() {
         </div>
       </div>
       {isMenuOpen && (
-        <nav className="md:hidden bg-primary-foreground text-primary p-4">
-          <ul className="space-y-2">
-            <li>
-              <Link
-                href="/"
-                className="block hover:underline"
-                onClick={toggleMenu}
-              >
-                Home
-              </Link>
-            </li>
-            <SignedIn>
+        <nav className="md:hidden border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container py-4">
+            <ul className="space-y-4">
               <li>
                 <Link
-                  href="/notes"
-                  className="block hover:underline"
+                  href="/"
+                  className="text-sm font-medium transition-colors hover:text-primary"
                   onClick={toggleMenu}
                 >
-                  Notes
+                  Home
                 </Link>
               </li>
-            </SignedIn>
-          </ul>
+              <SignedIn>
+                <li>
+                  <Link
+                    href="/notes"
+                    className="text-sm font-medium transition-colors hover:text-primary"
+                    onClick={toggleMenu}
+                  >
+                    Notes
+                  </Link>
+                </li>
+              </SignedIn>
+            </ul>
+          </div>
         </nav>
       )}
     </header>

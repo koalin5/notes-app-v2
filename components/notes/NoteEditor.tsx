@@ -68,7 +68,7 @@ export default function NoteEditor({ noteId, userId }: { noteId?: string; userId
   };
 
   return (
-    <Card>
+    <Card className="border-2 border-secondary shadow-md dark:shadow-secondary/10 dark:border-secondary/80">
       <form onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle>{noteId ? "View Note" : "Create New Note"}</CardTitle>

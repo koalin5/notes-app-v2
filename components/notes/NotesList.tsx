@@ -19,14 +19,14 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       {notes.map((note) => (
-        <Card key={note.id}>
+        <Card key={note.id} className="transition-all duration-200 hover:shadow-md">
           <CardHeader>
-            <CardTitle>{note.title}</CardTitle>
+            <CardTitle className="line-clamp-1">{note.title}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">{note.content.substring(0, 50)}...</p>
+            <p className="text-sm text-muted-foreground line-clamp-2">{note.content}</p>
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button
@@ -44,6 +44,11 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
           </CardFooter>
         </Card>
       ))}
+      {notes.length === 0 && (
+        <div className="text-center text-muted-foreground py-8">
+          No notes yet. Create your first note!
+        </div>
+      )}
     </div>
   );
 }

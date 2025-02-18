@@ -15,10 +15,14 @@ export default async function NotesPage() {
   if (profile.membership === "free") return redirect("/pricing");
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-[calc(100vh-3.5rem)]">
       <Sidebar userId={userId} />
-      <main className="flex-grow p-4 overflow-auto">
-        <NoteEditor userId={userId} />
+      <main className="flex-1 overflow-y-auto">
+        <div className="container max-w-3xl py-12 mx-auto px-4 flex items-start justify-center">
+          <div className="w-full">
+            <NoteEditor userId={userId} />
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -5,11 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectNote } from "@/db/schema/notes-schema";
 import { useRouter } from "next/navigation";
-import { Share2 } from "lucide-react";
+import { Share2, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { useState, useMemo } from "react";
+
+const stripHtml = (html: string) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || "";
+};
 
 export default function NotesList({ notes }: { notes: SelectNote[] }) {
   const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredNotes = useMemo(() => {
+    if (!searchQuery.trim()) return notes;
+    
+    const query = searchQuery.toLowerCase();
+    return notes.filter((note) => {
+      const content = stripHtml(note.content).toLowerCase();
+      return note.title.toLowerCase().includes(query) || content.includes(query);
+    });
+  }, [notes, searchQuery]);
 
   const handleDelete = async (id: string) => {
     await deleteNoteAction(id);
@@ -37,27 +55,32 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
     }
   };
 
-  const stripHtml = (html: string) => {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    return doc.body.textContent || "";
-  };
-
   return (
-    <div className="space-y-4 w-full">
-      {notes.map((note) => (
-        <Card key={note.id} className="transition-all duration-200 hover:shadow-md">
-          <CardHeader>
-            <CardTitle className="line-clamp-1">{note.title}</CardTitle>
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search notes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-8 w-full bg-background border-muted-foreground/20 focus-visible:ring-1 focus-visible:ring-offset-0"
+        />
+      </div>
+      {filteredNotes.map((note) => (
+        <Card key={note.id} className="transition-all duration-200">
+          <CardHeader className="p-4">
+            <CardTitle className="text-base line-clamp-1">{note.title}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <p className="text-sm text-muted-foreground line-clamp-2">
               {stripHtml(note.content)}
             </p>
           </CardContent>
-          <CardFooter className="flex justify-between gap-2">
+          <CardFooter className="p-4 pt-0 flex justify-between gap-2">
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleEdit(note.id)}
               >
                 Edit
@@ -72,6 +95,7 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
             </div>
             <Button
               variant="destructive"
+              size="sm"
               onClick={() => handleDelete(note.id)}
             >
               Delete
@@ -79,7 +103,7 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
           </CardFooter>
         </Card>
       ))}
-      {notes.length === 0 && (
+      {filteredNotes.length === 0 && (
         <div className="text-center text-muted-foreground py-8">
           No notes yet. Create your first note!
         </div>

@@ -5,13 +5,13 @@ import { NextResponse } from "next/server";
 const isProtectedRoute = createRouteMatcher([
   "/notes",          // Protect the main notes page
   "/notes/new",      // Protect note creation
-  "/api/*",         // Protect API routes
+  "/api/:path*",     // Protect API routes
 ]);
 
 // Define public routes that should be accessible without auth
 const isPublicRoute = createRouteMatcher([
   "/",               // Landing page
-  "/notes/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",  // Shared note pages (UUID pattern)
+  "/notes/:id",      // Shared note pages
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

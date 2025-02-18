@@ -18,6 +18,11 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
     router.push(`/notes/${id}`);
   };
 
+  const stripHtml = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || "";
+  };
+
   return (
     <div className="space-y-4 w-full">
       {notes.map((note) => (
@@ -26,7 +31,9 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
             <CardTitle className="line-clamp-1">{note.title}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground line-clamp-2">{note.content}</p>
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {stripHtml(note.content)}
+            </p>
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button

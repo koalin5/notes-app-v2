@@ -4,16 +4,15 @@ import { createNoteAction, getNoteByIdAction, updateNoteAction } from "@/actions
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import RichTextEditor from "./RichTextEditor";
 
 export default function NoteEditor({ noteId, userId }: { noteId?: string; userId: string }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(!noteId);
   const router = useRouter();
   const params = useParams();
 
@@ -33,26 +32,19 @@ export default function NoteEditor({ noteId, userId }: { noteId?: string; userId
     setIsLoading(true);
     try {
       if (noteId) {
-        console.log("Updating existing note");
         const result = await updateNoteAction(noteId, { title, content });
-        console.log("Update result:", result);
         toast({ title: "Note updated successfully" });
       } else {
-        console.log("Creating new note");
         const result = await createNoteAction({ userId, title, content });
-        console.log("Create result:", result);
         if (result.status === "success" && result.data) {
           toast({ title: result.message });
-          // Clear form on successful creation
           setTitle("");
           setContent("");
-          // Optionally, redirect to the newly created note
           router.push(`/notes/${result.data.id}`);
         } else {
           throw new Error(result.message || "Failed to create note");
         }
       }
-      console.log("Refreshing router");
       router.refresh();
     } catch (error) {
       console.error("Error saving note:", error);
@@ -63,51 +55,37 @@ export default function NoteEditor({ noteId, userId }: { noteId?: string; userId
       });
     } finally {
       setIsLoading(false);
-      console.log("Form submission completed");
     }
   };
 
   return (
-    <Card className="border-2 border-secondary shadow-md dark:shadow-secondary/10 dark:border-secondary/80">
+    <Card className="shadow-md">
       <form onSubmit={handleSubmit}>
         <CardHeader>
-          <CardTitle>{noteId ? "View Note" : "Create New Note"}</CardTitle>
+          <CardTitle>{noteId ? "Edit Note" : "Create New Note"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isEditing ? (
-            <>
-              <Input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Note title"
-                required
-              />
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Note content"
-                required
-              />
-            </>
-          ) : (
-            <>
-              <h2 className="text-2xl font-bold">{title}</h2>
-              <p className="whitespace-pre-wrap">{content}</p>
-            </>
-          )}
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Note title"
+            required
+          />
+          <RichTextEditor
+            content={content}
+            onChange={setContent}
+            editable={true}
+            showBorder={!!noteId}
+          />
         </CardContent>
         <CardFooter>
-          {isEditing ? (
-            <Button
-              type="submit"
-              disabled={isLoading}
-            >
-              {isLoading ? "Saving..." : noteId ? "Update" : "Create"} Note
-            </Button>
-          ) : (
-            <Button onClick={() => setIsEditing(true)}>Edit Note</Button>
-          )}
+          <Button
+            type="submit"
+            disabled={isLoading}
+          >
+            {isLoading ? "Saving..." : noteId ? "Update" : "Create"} Note
+          </Button>
         </CardFooter>
       </form>
     </Card>

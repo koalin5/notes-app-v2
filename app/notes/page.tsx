@@ -1,4 +1,6 @@
 import { getProfileByUserIdAction } from "@/actions/profiles-actions";
+import { createWelcomeNote } from "@/actions/notes-actions";
+import { getNotesByUserIdAction } from "@/actions/notes-actions";
 import Sidebar from "@/components/layout/Sidebar";
 import NoteEditor from "@/components/notes/NoteEditor";
 import { auth } from "@clerk/nextjs/server";
@@ -13,6 +15,14 @@ export default async function NotesPage() {
 
   if (!profile) return redirect("/signup");
   if (profile.membership === "free") return redirect("/pricing");
+
+  // Check if user has any notes
+  const { data: notes } = await getNotesByUserIdAction(userId);
+  
+  // If user has no notes, create welcome note
+  if (!notes || notes.length === 0) {
+    await createWelcomeNote(userId);
+  }
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">

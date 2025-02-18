@@ -4,6 +4,9 @@ import { createNote, deleteNote, getNoteById, getNotesByUserId, updateNote } fro
 import { InsertNote } from "@/db/schema/notes-schema";
 import { ActionState } from "@/types";
 import { revalidatePath } from "next/cache";
+import { WELCOME_NOTE_CONTENT, WELCOME_NOTE_TITLE } from "@/lib/welcome-note";
+import { db } from "@/db/db";
+import { notesTable } from "@/db/schema/notes-schema";
 
 export async function createNoteAction({ userId, title, content }: { userId: string; title: string; content: string }) {
   try {
@@ -65,5 +68,29 @@ export async function deleteNoteAction(id: string): Promise<ActionState> {
     return { status: "success", message: "Note deleted successfully" };
   } catch (error) {
     return { status: "error", message: "Failed to delete note" };
+  }
+}
+
+export async function createWelcomeNote(userId: string) {
+  try {
+    const result = await db.insert(notesTable).values({
+      userId,
+      title: WELCOME_NOTE_TITLE,
+      content: WELCOME_NOTE_CONTENT,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return {
+      status: "success",
+      message: "Welcome note created successfully",
+      data: result,
+    };
+  } catch (error) {
+    console.error("Error creating welcome note:", error);
+    return {
+      status: "error",
+      message: "Failed to create welcome note",
+    };
   }
 }

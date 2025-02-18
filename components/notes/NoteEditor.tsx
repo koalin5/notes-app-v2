@@ -8,8 +8,14 @@ import { toast } from "@/hooks/use-toast";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import RichTextEditor from "./RichTextEditor";
+import AISidepanel from "./AISidepanel";
 
-export default function NoteEditor({ noteId, userId }: { noteId?: string; userId: string }) {
+interface NoteEditorProps {
+  userId: string;
+  noteId?: string;
+}
+
+export default function NoteEditor({ userId, noteId }: NoteEditorProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -59,35 +65,46 @@ export default function NoteEditor({ noteId, userId }: { noteId?: string; userId
   };
 
   return (
-    <Card className="shadow-md">
-      <form onSubmit={handleSubmit}>
-        <CardHeader>
-          <CardTitle>{noteId ? "Edit Note" : "Create New Note"}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Note title"
-            required
-          />
-          <RichTextEditor
-            content={content}
-            onChange={setContent}
-            editable={true}
-            showBorder={!!noteId}
-          />
-        </CardContent>
-        <CardFooter>
-          <Button
-            type="submit"
-            disabled={isLoading}
-          >
-            {isLoading ? "Saving..." : noteId ? "Update" : "Create"} Note
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+    <form onSubmit={handleSubmit}>
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle>{noteId ? "Edit Note" : "Create New Note"}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Note title"
+                required
+              />
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <RichTextEditor
+                    content={content}
+                    onChange={setContent}
+                    editable={true}
+                    showBorder={!!noteId}
+                  />
+                </div>
+                <div className="pt-[52px]">
+                  <AISidepanel content={content} onContentUpdate={setContent} />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button
+                type="submit"
+                disabled={isLoading}
+              >
+                {isLoading ? "Saving..." : noteId ? "Update" : "Create"} Note
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    </form>
   );
 }

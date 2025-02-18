@@ -1,6 +1,7 @@
 "use client";
 
 import { deleteNoteAction } from "@/actions/notes-actions";
+import { semanticSearchAction } from "@/actions/ai-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectNote } from "@/db/schema/notes-schema";
@@ -8,7 +9,10 @@ import { useRouter } from "next/navigation";
 import { Share2, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { useState, useMemo } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useState, useMemo, useEffect } from "react";
 
 const stripHtml = (html: string) => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -18,16 +22,87 @@ const stripHtml = (html: string) => {
 export default function NotesList({ notes }: { notes: SelectNote[] }) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAISearch, setIsAISearch] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const debouncedSearch = useDebounce(searchQuery, 500);
+  const [filteredNoteIds, setFilteredNoteIds] = useState<string[]>([]);
+
+  const performAISearch = async () => {
+    if (!searchQuery.trim() || !isAISearch) {
+      setFilteredNoteIds([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      console.log("Starting AI search with query:", searchQuery);
+      console.log("Number of notes to search:", notes.length);
+
+      const result = await semanticSearchAction(searchQuery, notes.map(note => ({
+        id: note.id,
+        content: `Title: ${note.title}
+Created: ${new Date(note.createdAt).toLocaleString()}
+Last Updated: ${new Date(note.updatedAt).toLocaleString()}
+
+${stripHtml(note.content)}`
+      })));
+      
+      console.log("Search result:", result);
+
+      if (result.status === "success" && Array.isArray(result.data)) {
+        if (result.data.length === 0) {
+          console.log("No matches found for query:", searchQuery);
+          toast({
+            title: "No matches found",
+            description: "Try rephrasing your query or using different keywords",
+          });
+        } else {
+          console.log("Found matches:", result.data.length);
+        }
+        setFilteredNoteIds(result.data);
+      } else {
+        console.error("Invalid search result:", result);
+        setFilteredNoteIds([]);
+        toast({
+          title: "Search failed",
+          description: result.message || "Failed to perform search. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setFilteredNoteIds([]);
+      toast({
+        title: "Search failed",
+        description: error instanceof Error 
+          ? error.message 
+          : "An unexpected error occurred while searching. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const filteredNotes = useMemo(() => {
     if (!searchQuery.trim()) return notes;
     
+    if (isAISearch) {
+      return notes.filter(note => filteredNoteIds.includes(note.id));
+    }
+
     const query = searchQuery.toLowerCase();
     return notes.filter((note) => {
       const content = stripHtml(note.content).toLowerCase();
       return note.title.toLowerCase().includes(query) || content.includes(query);
     });
-  }, [notes, searchQuery]);
+  }, [notes, searchQuery, isAISearch, filteredNoteIds]);
+
+  useEffect(() => {
+    if (!isAISearch) {
+      setFilteredNoteIds([]);
+    }
+  }, [isAISearch]);
 
   const handleDelete = async (id: string) => {
     await deleteNoteAction(id);
@@ -57,15 +132,48 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search notes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-8 w-full bg-background border-muted-foreground/20 focus-visible:ring-1 focus-visible:ring-offset-0"
-        />
+      <div className="space-y-2">
+        <div className="relative w-full">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={isAISearch ? "Ask anything about your notes..." : "Search notes..."}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 w-full bg-background border-muted-foreground/20 focus-visible:ring-1 focus-visible:ring-offset-0"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && isAISearch) {
+                e.preventDefault();
+                performAISearch();
+              }
+            }}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="ai-search"
+              checked={isAISearch}
+              onCheckedChange={setIsAISearch}
+            />
+            <Label htmlFor="ai-search">AI Search</Label>
+          </div>
+          {isAISearch && (
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={performAISearch}
+              disabled={isSearching}
+            >
+              {isSearching ? "Searching..." : "Search"}
+            </Button>
+          )}
+        </div>
       </div>
+      {isSearching && (
+        <div className="text-center text-muted-foreground py-2">
+          Searching...
+        </div>
+      )}
       {filteredNotes.map((note) => (
         <Card key={note.id} className="transition-all duration-200">
           <CardHeader className="p-4">
@@ -105,7 +213,7 @@ export default function NotesList({ notes }: { notes: SelectNote[] }) {
       ))}
       {filteredNotes.length === 0 && (
         <div className="text-center text-muted-foreground py-8">
-          No notes yet. Create your first note!
+          {searchQuery.trim() ? "No matching notes found" : "No notes yet. Create your first note!"}
         </div>
       )}
     </div>

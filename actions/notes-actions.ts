@@ -28,11 +28,23 @@ export async function getNoteByIdAction(id: string): Promise<ActionState> {
 }
 
 export async function getNotesByUserIdAction(userId: string): Promise<ActionState> {
+  if (!userId) {
+    return { status: "error", message: "User ID is required" };
+  }
+
   try {
     const notes = await getNotesByUserId(userId);
+    if (!notes) {
+      return { status: "error", message: "No notes found" };
+    }
     return { status: "success", message: "Notes retrieved successfully", data: notes };
   } catch (error) {
-    return { status: "error", message: "Failed to get notes" };
+    console.error("Error in getNotesByUserIdAction:", error);
+    return { 
+      status: "error", 
+      message: error instanceof Error ? error.message : "Failed to get notes",
+      data: { error: error instanceof Error ? error.stack : "Unknown error" }
+    };
   }
 }
 

@@ -11,6 +11,17 @@ const schema = {
   notes: notesTable
 };
 
-const client = postgres(process.env.DATABASE_URL!);
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not defined");
+}
+
+let client;
+try {
+  client = postgres(process.env.DATABASE_URL);
+  console.log("Database connection initialized");
+} catch (error) {
+  console.error("Failed to initialize database connection:", error);
+  throw error;
+}
 
 export const db = drizzle(client, { schema });

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectNote } from "@/db/schema/notes-schema";
 import { useRouter } from "next/navigation";
-import { Share2, Search } from "lucide-react";
+import { Share2, Search, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -130,8 +130,24 @@ ${stripHtml(note.content)}`
     }
   };
 
+  const handleClose = () => {
+    const notesList = document.querySelector('[data-notes-list]');
+    if (notesList) {
+      notesList.classList.add('-translate-x-full');
+    }
+  };
+
   return (
     <div className="space-y-4">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleClose}
+        className="mb-2 ml-auto md:hidden"
+      >
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close notes list</span>
+      </Button>
       <div className="space-y-2">
         <div className="relative w-full">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
